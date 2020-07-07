@@ -1,0 +1,65 @@
+PROGRAM prg_Simulacao_Producao
+VAR
+	process : case_Simulacao;
+	
+	i_random_status	:	UINT;
+	i_random_tempo	:	UDINT;
+	udi_factor_time	:	UDINT := 100000;
+	t_execute_time	:	TIME;	
+	t_tempo_status	:	ARRAY[1..4] OF TOF; //1 - Produzindo, 2- Parada, 3- Emergência, 4- Tempo Manutencao
+	pulso_act		:	R_TRIG;
+	// Temporizadores para simular o sistema
+	t_Entrada: TON;
+	t_Saida: TON;
+	t_Rejeite: TON;
+END_VAR
+CASE process OF
+	
+	def_status:
+		pulso_act(CLK:=FALSE);
+		// Selecionando status de máquina
+		i_random_status	:= random(1,4);
+		// Mudando o processo para definir o tempo do status selecionado
+		process := def_tempo;
+		
+	def_tempo:
+		IF i_random_status = 1 THEN // Tempo produção
+
+				i_random_tempo :=random(2,5);
+				t_execute_time :=UDINT_TO_TIME(i_random_tempo * udi_factor_time);
+				process := execut;
+				
+		ELSIF i_random_status = 2 THEN// Tempo Parada
+				i_random_tempo :=random(1,4);
+				t_execute_time :=UDINT_TO_TIME(i_random_tempo * udi_factor_time);
+				process := execut;
+				
+		ELSIF i_random_status = 3 THEN // Tempo emergência
+				i_random_tempo :=random(1,3);
+				t_execute_time :=UDINT_TO_TIME(i_random_tempo * udi_factor_time);
+				process := execut;
+				
+		ELSE	// Tempo Parada
+				i_random_tempo :=random(1,8);
+				t_execute_time :=UDINT_TO_TIME(i_random_tempo * udi_factor_time);
+				process := execut;	
+		
+		END_IF			
+	execut:
+		//Pulso para deixar funcional o TOF
+		pulso_act(CLK:=TRUE);
+		//Tempo para rodar o status de máquina
+		t_tempo_status[i_random_status](IN:=pulso_act.Q,PT:=t_execute_time);	
+		
+		// Se o tempo acabar volta a fazer a lógica para selecionar status novamente
+		IF t_tempo_status[i_random_status].Q = FALSE THEN
+			process := def_status;
+		END_IF
+
+END_CASE
+
+IF i_random_status = 1 THEN
+	t_Entrada(IN:= NOT t_Entrada.Q, PT:= T#2500MS);
+	t_Saida(IN:= NOT t_Saida.Q, PT:= T#2500MS);		
+	t_Rejeite(IN:= NOT t_Rejeite.Q, PT:= T#7M);
+END_IF
