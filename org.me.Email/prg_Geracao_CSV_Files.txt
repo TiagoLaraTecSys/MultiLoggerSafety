@@ -1,0 +1,137 @@
+PROGRAM prg_Geracao_CSV_Files
+VAR
+	
+	fb_MySQL_Login		:	FbMySql_Login;
+	fb_MySQL_Logout		:	FbMySql_Logout;
+	fb_MySQL_Execute	:	FbMySql_Execute;
+	Procedimento		:	case_envio_de_arquivo;
+
+	x_extrair			:	BOOL;
+	
+	x_Loggar			:	BOOL;
+	x_Execute			:	BOOL;
+	x_Logout			:	BOOL;
+	s_status			:	STRING;
+	f_busy_out			:	F_TRIG;
+	
+	aSqlCommand			:	ARRAY [0..MYSQL_SQL_UPPER_BOUND] OF STRING(MYSQL_SQL_LENGTH);
+	
+	fbDirectoryReader	:	WagoAppFileDir.FbDirectoryReader_cpt;
+	typResultado		:	typFileProperties;
+	Tempo_Le_Dir		:	TON;
+	x_Terminated_Scan	:	BOOL;
+	sArquivos			:	ARRAY [1 .. 10] OF STRING;
+	i					:	INT;
+	x_Open				:	BOOL;
+	x_Trigger			:	BOOL;
+	
+	f_busy_mail_out		:	F_TRIG;
+	
+	t_Delete_Archive	:	TOF;
+	fbRemoveFile		:	WagoAppFileDir.FbRemoveFile;
+END_VAR
+
+CASE Procedimento OF
+	
+	standby:
+	
+		i := 0;
+		IF x_extrair THEN
+			Procedimento := ConnectSQL;
+		END_IF
+
+	ConnectSQL:
+		
+		x_Loggar := TRUE;
+		
+		IF fb_MySQL_Login.xConnected THEN
+			Procedimento := ExecuteSQL;
+		END_IF
+
+	ExecuteSQL:
+		
+		aSqlCommand[0] := 'CALL generate_csv();';
+		x_Execute := TRUE;
+		
+		IF f_busy_out.Q THEN
+			Procedimento := LogoutSQL;
+		END_IF
+		
+	LogoutSQL:
+	
+		x_Logout	:=	TRUE;
+		Procedimento := RescueCSV;
+		
+	RescueCSV:
+	
+		fbDirectoryReader(	xOpen:= x_Open,
+						xTrigger:= x_Trigger,
+						sDirname:= 'ROOT://media/sd/CSV_Files/',
+						typPropertyBuffer:= typResultado);
+						
+		x_extrair	:=	FALSE;
+		x_Loggar	:=	FALSE;
+		x_Execute	:=	FALSE;
+		x_Logout	:=	FALSE;
+		x_Open		:=	TRUE;
+		
+		IF fbDirectoryReader.xIsOpen AND NOT fbDirectoryReader.xEofReached THEN
+			
+			Tempo_Le_Dir(IN:= NOT (Tempo_Le_Dir.Q), PT:= T#250MS);
+			
+		END_IF
+		
+		IF Tempo_Le_Dir.Q THEN
+				x_Trigger	:= TRUE;
+				i := i + 1;
+				sArquivos[1] := typResultado.sFileName;		
+		END_IF
+		
+		
+		IF fbDirectoryReader.xEofReached THEN
+			
+			Procedimento := sentEmail;
+			x_Open	:=	FALSE;
+		END_IF		
+		
+	sentEmail:
+	
+		t_Delete_Archive(IN:= f_busy_mail_out.Q, PT:= T#10S);
+		IF f_busy_mail_out.Q THEN
+			Procedimento := deleteArch;
+		END_IF
+		
+		Rotina_envio_email.p_sAttachment := sArquivos[1];
+		IF NOT Rotina_envio_email.xBusy AND NOT f_busy_mail_out.Q THEN
+			Rotina_envio_email.p_xTrigger	 := TRUE;
+		END_IF
+	
+	deleteArch:
+
+			fbRemoveFile.Start(sArquivos[1]);
+		IF fbRemoveFile.eResult = eResultCode.OK THEN
+			Procedimento := standby;
+		END_IF
+		
+END_CASE
+
+
+	
+	fb_MySQL_Login(
+	sHost:= '127.0.0.1', 
+	uiPort:= 3306, 
+	sUsername:= 'root', 
+	sPassword:= 'wago', 
+	sDatabase:= 'industri_MultiLogger', 
+	xTrigger:= x_Loggar);
+	
+	fb_MySQL_Execute(
+	aSqlCommand:= aSqlCommand, 
+	xTrigger:= x_Execute, 
+	sStatus=> );
+	
+	fb_MySQL_Logout(xTrigger:= x_Logout);
+	
+	f_busy_out(CLK:= fb_MySQL_Execute.xBusy);
+	
+	f_busy_mail_out(CLK:= Rotina_envio_email.xBusy);
