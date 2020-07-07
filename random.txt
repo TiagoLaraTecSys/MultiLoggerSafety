@@ -1,0 +1,25 @@
+FUNCTION random : UINT
+VAR_INPUT
+	lower:UINT;
+	upper:UINT;
+END_VAR
+VAR
+	range:UINT:=upper-lower+1;
+	interval:UINT:=c4/range;
+	preRand:UINT;
+END_VAR
+VAR CONSTANT
+	c1:UDINT:=1103515245;
+	c2:UINT:=12345;
+	c3:UDINT:=65536;
+	c4:UINT:=32768;
+END_VAR
+
+gv.randNext := gv.randNext * c1 + c2;
+preRand := ULINT_TO_UINT((gv.randNext/c3) MOD c4);
+IF interval > 0 THEN
+	random := (preRand+lower*interval-1)/interval; 
+ELSE
+	random := preRand;
+END_IF;
+RETURN;
