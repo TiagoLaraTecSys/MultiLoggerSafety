@@ -1,0 +1,8 @@
+TYPE typ_retorno_OEE :
+STRUCT
+	r_Disponibilidade: REAL;
+	r_Performace:	REAL;
+	r_Qualidade:	REAL;
+	r_OEE: REAL;
+END_STRUCT
+END_TYPE

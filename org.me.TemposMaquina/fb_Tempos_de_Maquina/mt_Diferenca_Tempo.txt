@@ -1,0 +1,33 @@
+METHOD mt_Diferenca_Tempo : DINT
+VAR_INPUT
+	x_Pulso:BOOL;
+	x_reset:BOOL;
+	Tempo_Programado: DINT;
+END_VAR
+
+Pulso(CLK := x_Pulso);
+Pulso1(CLK := x_Pulso);
+P_reset(CLK := x_reset);
+
+IF Pulso.Q THEN
+	Qntd := Qntd + 1;
+	di_tempo_m := WagoAppTime.FuGetDateAndTime();
+END_IF
+
+// Para exibição em tempo Real do tempo de máquina
+IF x_Pulso THEN
+	TempoDecorrido := WagoAppTime.FuDifferenceDT(di_tempo_m, WagoAppTime.FuGetDateAndTime());
+	ELSIF Pulso1.Q THEN
+	s_Registro := TempoDecorrido + s_Registro;
+ELSE
+TempoDecorrido := 0;	
+END_IF
+IF DINT_TO_REAL(TempoDecorrido + s_Registro)*(250/(Tempo_Programado*3600)) < 250 THEN
+	mt_Diferenca_Tempo := TempoDecorrido + s_Registro;
+	ELSE
+	mt_Diferenca_Tempo := Tempo_Programado * 3600;
+END_IF
+
+IF P_reset.Q  THEN
+	s_Registro := 0;
+END_IF

@@ -1,0 +1,22 @@
+FUNCTION_BLOCK fb_Tempos_de_Maquina
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	di_tempo_m: DT;
+	di_tempo_m1: DINT;
+	Pulso,P_reset, x_Pulso: R_TRIG;
+	Pulso1, Pulso2: F_TRIG;
+	s_Registro: DINT;
+	i_Qntd: INT;
+	x_Mudanca: BOOL;
+	
+	t_qnt_tempo: INT;
+	t_tempo: DWORD;
+	i_select_cor: int;
+END_VAR
+
+PROPERTY public TempoDecorrido : DINT
+TempoDecorrido := di_tempo_m1;//get
+di_tempo_m1 := TempoDecorrido; //set

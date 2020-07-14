@@ -1,0 +1,30 @@
+FUNCTION fn_Calculo_OEE : typ_retorno_OEE
+VAR_INPUT
+	Tempos: typ_tempos_maquina;
+	quantidades: typ_Tabela_Linha;
+	cicloConfig: INT;
+	tmpDisponivel: REAL;
+END_VAR
+VAR
+	
+	Producao_Teorica: REAL;
+	r_Disponibilidade: REAL;
+	r_Performace:	REAL;
+	r_Qualidade:	REAL;
+END_VAR
+
+r_Disponibilidade := DINT_TO_REAL(Tempos.di_Tempo_Producao)/tmpDisponivel;
+
+Producao_Teorica := DINT_TO_REAL(Tempos.di_Tempo_Producao)/gv.config_saida.time_out;
+//r_Performace := (INT_TO_REAL(cicloConfig)/(quantidades.r_Ciclo));
+
+r_Performace := quantidades.r_Saida/((DINT_TO_REAL(Tempos.di_Tempo_Producao)/(INT_TO_REAL(cicloConfig)*0.001))*gv.config_saida.fator);
+
+
+//r_Performace := (DINT_TO_REAL(quantidades.di_Meta)/28800)/(quantidades.r_Saida/DINT_TO_REAL(Tempos.di_Tempo_Producao));
+r_Qualidade := quantidades.r_Saida/(quantidades.r_Rejeite + quantidades.r_Saida);
+
+fn_Calculo_OEE.r_Disponibilidade := r_Disponibilidade * 100;
+fn_Calculo_OEE.r_Performace := r_Performace * 100;
+fn_Calculo_OEE.r_Qualidade := r_Qualidade * 100;
+fn_Calculo_OEE.r_OEE :=((r_Disponibilidade*r_Performace*r_Qualidade)*100); 
