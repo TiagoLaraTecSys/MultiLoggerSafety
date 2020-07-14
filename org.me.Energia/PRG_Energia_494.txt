@@ -1,0 +1,111 @@
+PROGRAM PRG_Energia_494
+VAR
+	// Variáveis para o monitoramento de energia
+	fb_Valores_Energia: WagoAppPowerMeasurement.FbAC_Compact_494;
+	
+	x_Valid_Compact: BOOL;
+	x_Busy_Compact: BOOL;
+	x_Error_Comapct: BOOL;
+	o_Status_Compact: WagoSysErrorBase.FbResult;
+	
+	eStatuss:WagoAppPowerMeasurement.FbConfigurationAndStatus_494;
+	typtyp_Config_Parameters: WagoAppPowerMeasurement.typ494Config;
+	r_Total_Active_Power: REAL;
+	r_Total_Reactive_Power: REAL;
+	r_TotalApparent_Power: REAL;
+	r_TotalPower_FactorPF: REAL;
+	r_TotalActive_Energy: REAL;
+	r_TotalReactive_Energy: REAL;
+	r_TotalApparent_Energy: REAL;
+	x_Rotating_Field: BOOL;
+	a_Current: ARRAY [1..3] OF REAL;
+	a_Overcurrent: ARRAY [1..3] OF BOOL;
+	a_Voltage_L_N: ARRAY [1..3] OF REAL;
+	a_Undervoltage: ARRAY [1..3] OF BOOL;
+	a_Overvoltage: ARRAY [1..3] OF BOOL;
+	a_Active_Power: ARRAY [1..3] OF REAL;
+	a_Reactive_Power: ARRAY [1..3] OF REAL;
+	a_Apparent_Power: ARRAY [1..3] OF REAL;
+	a_Cos_Phi: ARRAY [1..3] OF REAL;
+	a_Power_Factor_PF: ARRAY [1..3] OF REAL;
+	a_Frequency: ARRAY [1..3] OF REAL;
+	a_No_Zero: ARRAY [1..3] OF BOOL;
+	a_Volt_Sag: ARRAY [1..3] OF BOOL;
+	a_4Quadrant: ARRAY [1..3] OF INT;
+	a_Feedback: ARRAY [1..8] OF WagoSysErrorBase.FbResult;
+	typModuloINF: typ494State;
+	Soma: REAL;
+	SomaPotAtiva: REAL;
+	SomaEnergia: REAL;
+	SomaPotReat: REAL;
+	SomaPotAp: REAL;
+	fb_Consumo_Trifasico: WagoAppPowerMeasurement.FbAC_Values_494;
+	r_Consumo_f1: REAL;
+	r_Consumo_f2: REAL;
+	r_Consumo_f3: REAL;
+	SomaEnAtiva : REAL;
+END_VAR
+
+fb_Valores_Energia(
+	xEnable:= TRUE, 
+	I_Port:= _3_PHASE_POM_480VAC_1A, 
+	tCycleTime:= T#1S, 
+	rSelectedScalingFactor:= typtyp_Config_Parameters.rSelectedScalingFactor, 
+	xValid=> x_Valid_Compact, 
+	xBusy=> x_Busy_Compact, 
+	xError=> x_Error_Comapct, 
+	oStatus=> o_Status_Compact, 
+	rTotalActivePower=> r_Total_Active_Power, 
+	rTotalReactivePower=> r_Total_Reactive_Power, 
+	rTotalApparentPower=> r_TotalApparent_Power, 
+	rTotalPowerFactorPF=> r_TotalPower_FactorPF, 
+	rTotalActiveEnergy=> r_TotalActive_Energy, 
+	rTotalReactiveEnergy=> r_TotalReactive_Energy, 
+	rTotalApparentEnergy=> r_TotalApparent_Energy, 
+	xRotatingField=> x_Rotating_Field, 
+	aCurrent=> a_Current, 
+	aOvercurrent=> a_Overcurrent, 
+	aVoltage_L_N=> a_Voltage_L_N, 
+	aUndervoltage=> a_Undervoltage, 
+	aOvervoltage=> a_Overvoltage, 
+	aActivePower=> a_Active_Power, 
+	aReactivePower=> a_Reactive_Power, 
+	aApparentPower=> a_Apparent_Power, 
+	aCosPhi=> a_Cos_Phi, 
+	aPowerFactorPF=> a_Power_Factor_PF, 
+	aFrequency=> a_Frequency, 
+	aNoZero=> a_No_Zero, 
+	aVoltSag=> a_Volt_Sag, 
+	a4Quadrant=> a_4Quadrant, 
+	aFeedback=> a_Feedback);
+	
+	// Bloco para aferição dos consumos
+	fb_Consumo_Trifasico(
+	xEnable:= TRUE, 
+	I_Port:= _3_PHASE_POM_480VAC_1A, 
+	eAC_Value1:= 64, 
+	eAC_Value2:= 65, 
+	eAC_Value3:= 66, 
+	eAC_Value4:= , 
+	xValid=> , 
+	xBusy=> , 
+	xError=> , 
+	oStatus=> , 
+	rMeasuredValue1=> r_Consumo_f1, 
+	rMeasuredValue2=> r_Consumo_f2, 
+	rMeasuredValue3=> r_Consumo_f3, 
+	rMeasuredValue4=> );
+	
+	
+	eStatuss(
+	xEnable:= TRUE, 
+	I_Port:= _3_PHASE_POM_480VAC_1A, 
+	typConfiguration:= typtyp_Config_Parameters, 
+	typModuleInfo=> typModuloINF);
+	Soma := r_Total_Active_Power + r_Total_Reactive_Power + r_TotalApparent_Power;
+	SomaEnergia := r_TotalActive_Energy + r_TotalReactive_Energy + r_TotalApparent_Energy;
+	
+	SomaPotAp := a_Apparent_Power[1] + a_Apparent_Power[2] + a_Apparent_Power[3];
+	SomaPotReat := abs(a_Reactive_Power[1]) + abs(a_Reactive_Power[2]) + abs(a_Reactive_Power[3]);
+	SomaPotAtiva := a_Active_Power[1] + a_Active_Power[2] + a_Active_Power[3];
+	SomaEnAtiva := r_Consumo_f1 + r_Consumo_f2 + r_Consumo_f3;
