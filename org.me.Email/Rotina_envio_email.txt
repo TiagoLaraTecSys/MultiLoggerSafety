@@ -1,0 +1,73 @@
+PROGRAM Rotina_envio_email
+VAR
+  oSmtpSend           : WagoAppMail.FbSmtpSend;
+
+    xTrigger            : BOOL;
+
+    xError              : BOOL;
+    xBusy               : BOOL;
+    sServer             : STRING := 'smtp.gmail.com';
+    wPort               : WORD   := 465;
+    sUser               : STRING := 'safetycontrolpr@gmail.com';
+    sPwd                : STRING := 'Safetycontrol12345';
+    eAuthentication     : WagoAppMail.eAuthentication := WagoAppMail.eAuthentication.eAUTOMATIC;
+    eEncryption         : WagoAppMail.eEncryption := WagoAppMail.eEncryption.eSMTPS;
+    typSSL_Options      : WagoAppMail.WagoTypesCurl.typSSL_Options;
+    tTimeout            : TIME := t#10m;
+    sFrom               : STRING := 'Safety Control';
+    sTo                 : STRING := 'tiago@safetycontrol.ind.br';
+    sCc                 : STRING := 'engenharia@safetycontrol.ind.br';
+    sBcc                : STRING := '';
+    sSubject            : STRING := 'Relatório Produtividade MultiLogger';
+   	sName				: STRING(20);
+	typMessage          : WagoAppMail.typMessage;
+	sAttachment: WagoAppMail.WagoAppString.MaxString;
+	oStatus: WagoSysErrorBase.FbResult;
+	aAttachment         : ARRAY[0..1] OF typAttachment;
+	sMessage: STRING(1024); 
+
+END_VAR
+
+//sAttachment := CONCAT(PRG_DataLogger_V1.typ_Config_Parameters.sPath,PRG_DataLogger_V1.typ_Config_Parameters.sFilename);
+
+
+//sAttachment := CONCAT(sAttachment,DATE_TO_STRING(DT_TO_DATE(WagoAppTime.FuGetLocalDateAndTime())));
+
+prg_Generating_CSV_Files();
+
+typMessage.pData        := ADR(gv.sMessage);
+typMessage.udiSize      := SIZEOF(gv.sMessage);
+typMessage.sContentType := 'text/plain';
+typMessage.sCharset     := 'windows-1252';
+typMessage.sEncoding    := '8bit';
+
+aAttachment[0].sFilename := '';
+aAttachment[0].sPath     := sAttachment;
+aAttachment[0].udiSize   := 0;
+aAttachment[0].pData	 := 0;
+typSSL_Options.xVerifyHost := FALSE;
+typSSL_Options.xVerifyPeer := FALSE;
+
+oSmtpSend(
+    xTrigger:= xTrigger,
+    oStatus=> oStatus,
+    xError=> xError,
+    xBusy=> xBusy,
+    sServer:= sServer,
+    wPort:= wPort,
+    sUser:= sUser,
+    sPassword:= sPwd,
+    eAuthentication:= eAuthentication,
+    eEncryption:= eEncryption,
+    typSSL_Options:= typSSL_Options,
+    tTimeout:=tTimeout,
+    sFrom:= sFrom,
+    sTo:= sTo,
+    sCc:= sCc,
+    sBcc:= sBcc,
+    sSubject:= sSubject,
+    typMessage:= typMessage,
+    aAttachment:= aAttachment);
+	oStatus.GetDescription();
+
+		 

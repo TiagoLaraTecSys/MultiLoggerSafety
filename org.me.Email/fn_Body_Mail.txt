@@ -1,0 +1,21 @@
+FUNCTION fn_Body_Mail : STRING
+VAR_INPUT
+	sName	:	STRING;
+END_VAR
+VAR
+	sBody: STRING(650) := '$R$N$R$NApresentamos em anexo o relatório tabulado dos sistemas de Análise de Produtividade e Consumo de Energia apresentados pelo MultiLogger.
+
+Colocamos a vossa disposição nossa Engenharia para esclarecimentos das eventuais duvidas. 
+
+Atenciosamente,
+Equipe Safety Control
+Tel: (41) 3242-0316
+Email: vendas@safetycontrol.ind.br
+Site: www.safetycontrol.ind.br';
+
+END_VAR
+
+gv.sMessage := '';
+WagoAppString.StrAppend(gv.sMessage,SIZEOF(gv.sMessage), 'Prezado Sr(a) ');
+WagoAppString.StrAppend(gv.sMessage,SIZEOF(gv.sMessage), sName);
+WagoAppString.StrAppend(gv.sMessage,SIZEOF(gv.sMessage),sBody);
